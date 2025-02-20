@@ -79,10 +79,18 @@ jobs:
         run: |
           xcodebuild -version
 
-      - name: Setup .NET 8.0.x
+      - name: ruta de desarrollo activo
+        run: |
+          xcode-select -p
+  
+      - name: aceptación de licencias y componentes adicionales
+        run: |
+          xcodebuild -runFirstLaunch
+
+      - name: Setup .NET 8.0.101
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 8.0.101
 
       - name: Elimina la versión NET9 (default)
         run: |
@@ -94,13 +102,13 @@ jobs:
           dotnet --info
         env:
           DOTNET_ROOT: /usr/share/dotnet
-          DOTNET_VERSION: 8.0.x
+          DOTNET_VERSION: 8.0.101
 
       - name: Instalacion MAUI workload
         run: |
           cd /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8
           #dotnet workload restore --skip-manifest-update
-          dotnet workload install ios maui android --version 8.0.402.1
+          dotnet workload install ios maui android --version 8.0.101
 
       - name: Restaurar dependencias
         shell: bash
