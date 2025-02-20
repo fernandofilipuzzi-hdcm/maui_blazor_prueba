@@ -107,14 +107,15 @@ jobs:
         run: |      
           dotnet restore "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj"
 
-      - name: ==Construye para Release==
+      - name: ==Build Release==
         run: |
           dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release -f net8.0-ios \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="com.pruebablazor9" /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db" 
+            /p:CodesignProvision="com.pruebablazor9" \
+            /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db" 
 
-      - name: ==Construye para Release==
+      - name: ==Publish Release==
         run: |
           dotnet publish "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release \
