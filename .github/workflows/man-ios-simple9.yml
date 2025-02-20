@@ -79,6 +79,14 @@ jobs:
         run: |
           xcodebuild -version
 
+      - name: ruta de desarrollo activo
+        run: |
+          xcode-select -p
+
+      - name: aceptación de licencias y componentes adicionales
+        run: |
+          xcodebuild -runFirstLaunch
+
       - name: Setup .NET 8.0.x
         uses: actions/setup-dotnet@v4
         with:
