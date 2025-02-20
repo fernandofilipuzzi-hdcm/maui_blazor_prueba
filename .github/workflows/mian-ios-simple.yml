@@ -111,19 +111,16 @@ jobs:
 
       - name: ==Construye para Release==
         run: |
-          dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" -c Release -f net8.0-ios \
-            /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" /p:CodesignProvision="com.pruebablazor9" \
-            /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db"   
-            
-            tree /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8
-
-      - name: Publica el iOS ipa
-        run: |  
-          xcodebuild -exportArchive \
-           -archivePath "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/ios/archive/PruebaBlazor8.xcarchive" \
-           -exportOptionsPlist "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/ios/ExportOptions.plist" \
-           -exportPath "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/ios/ipa"
-
-          tree /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8
+          dotnet msbuild "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
+            /t:Publish \
+            /p:Configuration=Release \
+            /p:Platform=iPhone \
+            /p:TargetFramework=net8.0-ios \
+            /p:RuntimeIdentifier=ios-arm64 \
+            /p:ArchiveOnBuild=true \
+            /p:BuildIpa=false \
+            /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
+            /p:CodesignProvision="com.pruebablazor9" \
+            /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db"
 
                        
