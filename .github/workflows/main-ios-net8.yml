@@ -1,0 +1,427 @@
+name: CD MAIN IO NET8 Build
+
+on:
+
+  workflow_dispatch:
+
+env:
+  BUILD_VERSION: '1.0.19'
+  DOTNET_VERSION_TARGET: net8.0
+  PROJECT_FILE: 'PruebaBlazor8.csproj'
+  PROJECT_FOLDER: 'PruebaBlazor8'
+  SOLUTION_FOLDER: './PruebaBlazor'
+  BUILD_CONFIG: 'Release'
+  PACKAGE_NAME: 'com.pruebablazor9'  
+  
+permissions:
+  contents: write
+  issues: read
+  packages: write
+
+jobs:
+
+  build-ios:
+    runs-on: macos-14
+    # runs-on: macos-13 
+    # runs-on: macos-latest
+    name: iOS Build and Publish
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOTNET_VERSION: '8.0.x'
+      XCODE_VERSION: '15.4.0'   
+      # XCODE_VERSION: '15.2.0'   
+      KEYCHAIN_PATH: "${{ github.workspace }}/build.keychain-db"
+      WORKSPACE: ${{ github.workspace }}
+      KEYCHAIN_PASS: '123'
+      CERT_DIST_PATH_P12: "${{ github.workspace }}/cert_dist.p12"
+      P12_PASS: ''
+
+    steps:
+
+    #- name: create release
+    #  id: create_release
+    #  uses: actions/create-release@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  with:
+    #    tag_name: release-${{ env.BUILD_VERSION  }}
+    #    release_name: release ${{ env.BUILD_VERSION  }}
+    #    draft: false
+    #    prerelease: false
+
+    - name: "show workspace"
+      shell: sh
+      run: |
+        echo "show workspace"
+        ls $WORKSPACE
+        echo "end show workspace"
+
+    - name: Checkout the code  (hace el clone del repo)
+      uses: actions/checkout@v4     
+      with:
+        path: ./    
+
+    - name: ==Prepara el llavero==
+      shell: bash
+      run: |
+        echo "Prepara llavero"
+        #
+        echo "Path: $KEYCHAIN_PATH"
+        #
+        echo "Creando el llavero"
+        security create-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"        
+        security default-keychain -s "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+        #
+        echo  "Test path llavero: $(ls "$KEYCHAIN_PATH")"
+        #
+        echo "End prepa llavero ..."
+   
+    - name: Decode b64 el certificado de distribucion desde el secret
+      id: import_cert_dist
+      shell: bash
+      run: | 
+        echo "Decode b64 y revisando el contenido del certificado de distribucion"
+        #
+        echo -n "${{secrets.IOS_CERT_DIST_CONTAIN_BASE64}}" | base64 --decode -o $CERT_DIST_PATH_P12
+        #
+        echo "===contenido cert dist P12 base64 (sin decodear, desde secrets)==="
+        echo "${{secrets.IOS_CERT_DIST_CONTAIN_BASE64}}"
+        echo "===end contenido...===="
+        #
+        echo ===contenido cert dist P12 decodeado  ===
+        cat $CERT_DIST_PATH_P12
+        echo "===end contenido...======"
+        #
+        echo "end decode b64..."
+                
+    - name: Importando al llavero - Certificado de distribucion (p12)
+      shell: bash
+      run: |
+        echo "Importando al llavero - Certificado de distribucion (p12)"
+        #
+        security import $CERT_DIST_PATH_P12 -P "$P12_PASS" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        #
+        echo "Otorga al proceso de compilacion el acceso al llavero"
+        echo " nota: requiere que haya importado el fichero sino da error"
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+        #
+        echo "end importando ..."
+        
+    - name: Revisando los certificados en el llavero y extrae el nombre
+      shell: sh
+      run: |
+        echo "Revisando la informacion"
+        #
+        echo "1- Lista si el llavero(path:$KEYCHAIN_PATH) esta disponible, fichero: $(ls "$KEYCHAIN_PATH") <-"
+        security list-keychains -s "$KEYCHAIN_PATH"
+        #
+        echo "2- Recuperando el contenido desde el llavero: (-p es formato PEM)"
+        CERT_DIST_CONTAIN=$(security find-certificate -c "NOTIONS" -a -Z -p "$KEYCHAIN_PATH")
+        #
+        echo "====contenido recuperado desde el llavero P12======="
+        echo "---(me aseguro que haya sido importado y esta-------"
+        echo $CERT_DIST_CONTAIN
+        echo "==========fin P12==================================="
+        #
+        echo "3- Extraccion del nombre del certificado (Si el certificado esta en el llavero, se espera el nombre del certificado!): "
+        # CERT_DIST_NAME=$(echo $CERT_DIST_CONTAIN | grep -o '"alis"<blob>="[^"]*"' | sed -E 's/"alis"<blob>="(.*)"/\1/')
+        # CERT_DIST_NAME="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)"
+        # CERT_DIST_NAME=$(security find-identity -v -p codesigning | awk -F '"|:"' '{print $4}')
+        CERT_DIST_NAME="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)"
+        echo "Nombre del certificado: $CERT_DIST_NAME <-(no debe estar vacio!)"
+        #
+        echo "4- Verifica el nombre del certificado en Los llaveros (si el certificado esta en el llavero deberia imprimir: numero nombre certificado(clave))"
+        security find-identity -v -p codesigning 
+        #
+        echo "5- Verifica el nombre del certificado el llavero build: ${KEYCHAIN_PATH}"
+        security find-identity -v -p codesigning "${KEYCHAIN_PATH}"
+        #
+        echo "6- Revisa si hay un certificado con la clave NOTIONS en el llavero: $KEYCHAIN_PATH"
+        security find-key -c "NOTIONS" "$KEYCHAIN_PATH"
+        #
+        echo "CERT_DIST_NAME=$CERT_DIST_NAME" >> $GITHUB_ENV
+        #
+        echo "end Revisando..."
+
+    - name: certificado provisional
+      shell: bash
+      run: |
+        #
+        echo "certificado provisional"
+        #
+        CERT_DIR_DEST="/Users/runner/Library/MobileDevice/Provisioning\ Profiles"
+        CERT_DIR_DEST_2="/Users/runner/Library/Developer/Xcode/UserData/Provisioning\ Profiles"
+        CERT_FILE_ORIG="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision"
+        CERT_FILE_DEST="/Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision"
+        CERT_FILE_DEST_2="/Users/runner/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision"        
+        #
+        mkdir -p /Users/runner/Library/MobileDevice
+        mkdir -p "$CERT_DIR_DEST"
+        mkdir -p "$CERT_DIR_DEST_2"
+        #
+        cp $CERT_FILE_ORIG "$CERT_FILE_DEST"
+        cp $CERT_FILE_ORIG "$CERT_FILE_DEST_2"
+        #   
+        echo "origin path: $(ls -l "$CERT_FILE_ORIG")"
+        echo "dest path: $(ls -l "$CERT_FILE_DEST")"
+        echo "dest path 2: $(ls -l "$CERT_FILE_DEST_2")"
+        #
+        brew install tree
+        chmod -R u+rX /Users/runner/Library/MobileDevice
+        tree /Users/runner/Library/MobileDevice
+        #
+        echo "end certificado"
+
+    - name: prueba path certificado 
+      shell: bash
+      run: |
+        echo "prueba path certificado"
+        #
+        echo "1- si expande completo path1: $(ls -l "/Users/runner/Library/MobileDevice/Provisioning\ Profiles") <-" 
+        echo "2- si expande completo path2: $(ls -l "/Users/runner/Library/Developer/Xcode/UserData/Provisioning\ Profiles") <-" 
+        #
+        sudo security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision" > /dev/null 
+        # sudo security cms -D -i "/Users/runner/Library/Developer/Xcode/UserData/Provisioning\ Profiles/compruebablazor9.mobileprovision" > /dev/null 
+        #   
+        echo "end prueba path certificado"
+
+    #- name: ==Variables - Certificado Provisional profile .mobileprovision==
+    #  shell: sh
+    #  run: |
+    #    echo "Variables - Certificado Provisional profile "
+    #    #
+    #    echo "1- Package name: ${PACKAGE_NAME}"
+    #    #
+    #    CERT_PROV_FILE_NAME=$(echo ${PACKAGE_NAME} | tr -d '.')
+    #    echo "2- Nombre fichero provider: $CERT_PROV_FILE_NAME"
+    #    #
+    #    CERT_PROV_FILE_PATH="${WORKSPACE}/Certificados/${CERT_PROV_FILE_NAME}.mobileprovision"
+    #    echo "3- Path fichero provider subido: $CERT_PROV_FILE_PATH"
+    #    #
+    #    echo "5- Copiando provisional a default"
+    #    DEFAULT_CERT_PROV_DIR_PATH="~/Library/MobileDevice/Provisioning\ Profiles"
+    #    mkdir -p "$DEFAULT_CERT_PROV_DIR_PATH"
+    #    DEFAULT_CERT_PROV_FILE_PATH="${DEFAULT_CERT_PROV_DIR_PATH}/${PACKAGE_NAME}.mobileprovision"        
+    #    cp "$CERT_PROV_FILE_PATH" "$DEFAULT_CERT_PROV_FILE_PATH"
+    #    #
+    #    # ln -s "$DEFAULT_CERT_PROV_DIR_PATH" 
+    #    # ln -s "~/Library/Developer/Xcode/UserData/Provisioning\ Profiles" "$DEFAULT_CERT_PROV_DIR_PATH"
+    #    mkdir -p "~/Library/Developer/Xcode/UserData/Provisioning\ Profiles"
+    #    cp "$CERT_PROV_FILE_PATH" "~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/${PACKAGE_NAME}.mobileprovision"
+    #    cp "$CERT_PROV_FILE_PATH" "~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/${CERT_PROV_FILE_NAME}.mobileprovision"
+    #    #
+    #    echo "6- Verificando nombre del default provisional: $DEFAULT_CERT_PROV_FILE_PATH si existe $(ls "$DEFAULT_CERT_PROV_FILE_PATH")"
+    #    #
+    #    echo "7- Revisando contenido del certificado desde la ubicacion default"
+    #    echo "=========contenido provider==(default)============"
+    #    cat "$DEFAULT_CERT_PROV_FILE_PATH"        
+    #    echo "=========end contenido provider==================="
+    #    #
+    #    echo "8-"
+    #    mkdir -p "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/"
+    #    DEFAULT_CERT_PROV_FILE_PATH="/Users/runner/Library/MobileDevice/Provisioning\ Profiles/${PACKAGE_NAME}.mobileprovision"
+    #    cp "$CERT_PROV_FILE_PATH" "$DEFAULT_CERT_PROV_FILE_PATH"
+    #    #
+    #    echo "DEFAULT_CERT_PROV_FILE_PATH=$DEFAULT_CERT_PROV_FILE_PATH" >> $GITHUB_ENV
+    #    #
+    #    echo "end Variables..."
+
+    #- name: Test
+    #  run: | 
+    #    #
+    #    echo "viendo si expande correctamente el default path del provisional"
+    #    #
+    #    # echo "si expande completo(1): $(ls -l ~/Library/MobileDevice/Provisioning\ Profiles/)"
+    #    echo "si expande completo(2): $(ls -l "$DEFAULT_CERT_PROV_FILE_PATH")"
+    #    #
+    #    # DEFAULT_CERT_PROV_FILE_PATH=$(eval echo "$DEFAULT_CERT_PROV_FILE_PATH")
+    #    # echo "DEFAULT_CERT_PROV_FILE_PATH=$DEFAULT_CERT_PROV_FILE_PATH" >> $GITHUB_ENV
+    #    #
+    #    sudo chmod ugo+rwx "$DEFAULT_CERT_PROV_FILE_PATH"
+    #    sudo security cms -D -i "$DEFAULT_CERT_PROV_FILE_PATH" > /dev/null
+    #    #
+    #    echo "end test"
+
+    - name: Verificando Datos - Certificado Provisional profile
+      shell: bash
+      run: |
+        echo "Datos - Certificado Provisional profile"
+        #
+        PROV_PROFILE_UUID=$(security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision" | grep -A1 "UUID" | grep -o "[-a-zA-Z0-9]\{36\}")
+        echo "UUID del Certificado provisional profile: /Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision" 
+        #
+        echo "end Datos..."
+
+    - name: Setup XCode ${{ env.XCODE_VERSION }}
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ env.XCODE_VERSION }}
+
+    - name: Verify Xcode version
+      run: |
+        xcodebuild -version
+
+    - name: Configurar versión activa XCode 
+      run: | 
+        echo "versiones de xcode y path: $(ls /Applications)"
+        tree /Applications
+        sudo xcode-select --switch /Applications/Xcode_${{env.XCODE_VERSION}}.app/Contents/Developer
+        # sudo xcode-select --switch /Applications/Xcode_${{env.XCODE_VERSION}}.app
+        xcode-select -p
+        sudo xcodebuild -runFirstLaunch
+    
+    - name: Verificar las versiones de los simuladores
+      run: |
+        xcrun simctl list runtimes
+
+    - name: Verificar las versiones de los sdks de xcode
+      run: |
+        xcodebuild -showsdks
+  
+    - name: Setup .NET ${{ env.DOTNET_VERSION }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Set dotnet enviroment defaults.
+      shell: bash
+      run: |   
+        export DOTNET_CLI_TELEMETRY_OPTOUT=1
+        dotnet dev-certs https
+        echo "DOTNET_CLI_TELEMETRY_OPTOUT=$DOTNET_CLI_TELEMETRY_OPTOUT" >> $GITHUB_ENV
+
+    - name: Elimina la versión net9 (default)
+      shell: bash
+      run: |
+        rm -rf /Users/runner/.dotnet/sdk/9.*
+        echo "donet===> $(ls /Users/runner/.dotnet/sdk)"
+
+    - name: Verifica .NET version
+      shell: bash
+      run: |
+        echo "dotnet version: "
+        dotnet --version 
+        echo "dotnet listar sdks: "        
+        dotnet --list-sdks
+        echo "dotnet listar runtimes: " 
+        dotnet --list-runtimes
+        
+    - name: Instalar .NET 8
+      run: |
+        echo "Usando .NET 8"
+        dotnet --info
+      env:
+        DOTNET_ROOT: /usr/share/dotnet
+        DOTNET_VERSION: 8.0.x
+
+    #- name: Restaurar workloads de .NET 8
+    #  run: dotnet workload restore          
+  
+    - name: preparando los path del proyecto
+      shell: bash
+      run: |
+        #
+        PROJECT_DIR_PATH="${SOLUTION_FOLDER}/${PROJECT_FOLDER}"
+        PROJECT_BUILD_FILE_PATH="${PROJECT_DIR_PATH}/${PROJECT_FILE}"
+        #
+        echo "Verifica path project folder: $(ls "$PROJECT_DIR_PATH")"
+        echo "Verifica path project folder: $(ls "$PROJECT_BUILD_FILE_PATH")"
+        #
+        echo "PROJECT_DIR_PATH=$PROJECT_DIR_PATH" >> $GITHUB_ENV
+        echo "PROJECT_BUILD_FILE_PATH=$PROJECT_BUILD_FILE_PATH" >> $GITHUB_ENV
+        #
+
+    - name: Instalacion MAUI workload
+      shell: bash
+      run: |
+        cd $PROJECT_DIR_PATH
+        dotnet workload restore --skip-manifest-update
+
+    - name: Restaurar dependencias
+      shell: bash
+      run: |      
+        dotnet restore "./PruebaBlazor/PruebaBlazor8/"      
+
+    #- name: ==Construye para el simulador iOS==
+    #  shell: bash
+    #  run: |
+    #    dotnet build $PROJECT_BUILD_FILE_PATH -c ${BUILD_CONFIG} -f:${DOTNET_VERSION_TARGET}-ios -p:RuntimeIdentifier=iossimulator-x64 -p:PlatformTarget=x64
+  
+    #- name: Carpeta destino del build
+    #  id: locate_app
+    #  shell: bash
+    #  run: |        
+    #    echo "Carpeta destino del build"
+    #    PATH_FIND="$PROJECT_DIR_PATH/bin/$BUILD_CONFIG/$DOTNET_VERSION_TARGET-ios/iossimulator-x64"
+    #    APP_PATH=$(find "${PATH_FIND}/" -name "*.app" | head -n 1)
+    #    #
+    #    echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
+    #    #
+    #    echo "Carpeta destino build: $APP_PATH"
+    #    echo "end Carpeta destino..."
+                  
+    #- name: Comprime la carpeta .app
+    #  shell: bash
+    #  run: |
+    #    echo "Comprime la carpeta .app"
+    #    #
+    #    zip -r "${APP_PATH}.zip" "$APP_PATH"
+    #    #
+    #    echo "end Comprime la carpeta .app..."
+  
+    #- name: Upload Release Asset-paquete app-zip
+    #  id: upload-release-asset-app-zip
+    #  uses: actions/upload-release-asset@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  with:
+    #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #    asset_path: ${{ env.APP_PATH }}.zip
+    #    asset_name: ${{ env.PACKAGE_NAME }}.app.zip
+    #    asset_content_type: application/zip    
+
+    - name: ==Construye para Release==
+      run: |
+        echo Construye para release
+        #
+        dotnet build -v:d "$PROJECT_BUILD_FILE_PATH" -c ${BUILD_CONFIG} -f ${DOTNET_VERSION_TARGET}-ios \
+          /p:CodesignKey="${CERT_DIST_NAME}" /p:CodesignProvision="${PACKAGE_NAME}" /p:SigningKeychain="${KEYCHAIN_PATH}"           
+        #
+        echo "end Construye los proyectos..."
+
+    - name: Publica el iOS ipa
+      shell: bash
+      run: |          
+        echo "Publica el iOS ipa"
+        #
+        echo "1- si expande completo path1: $(ls -l "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision") <-" 
+        echo "2- si expande completo path2: $(ls -l "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision") <-" 
+        #
+        #dotnet publish "$PROJECT_BUILD_FILE_PATH" -c ${BUILD_CONFIG} -f:${DOTNET_VERSION_TARGET}-ios /p:ArchiveOnBuild=true \
+        #                       /p:EnableAssemblyILStripping=false /p:CodesignKey="${CERT_DIST_NAME}" \
+        #                       /p:CodesignProvision="$PACKAGE_NAME" /p:SigningKeychain="$KEYCHAIN_PATH"    
+        #
+        #dotnet publish "$PROJECT_BUILD_FILE_PATH" -c ${BUILD_CONFIG} -f:${DOTNET_VERSION_TARGET}-ios --p:ArchiveOnBuild=true \
+        #                       --p:EnableAssemblyILStripping=false --p:CodesignKey="${CERT_DIST_NAME}" \
+        #                       --p:CodesignProvision="/Users/runner/Library/MobileDevice/Provisioning Profiles/compruebablazor9.mobileprovision" \
+        #                       --p:SigningKeychain="$KEYCHAIN_PATH"    
+        #
+        dotnet publish "$PROJECT_BUILD_FILE_PATH" -c $BUILD_CONFIG -f:${DOTNET_VERSION_TARGET}-ios --p:ArchiveOnBuild=true \
+          --p:EnableAssemblyILStripping=false --p:CodesignKey="$CERT_DIST_NAME" \
+          --p:CodesignProvision="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision"
+        #
+        echo "end Publica el iOS ipa"
+                 
+    #- name: Sube al Release Asset el paquete ipa
+    #  id: upload-release-asset-ipa
+    #  uses: actions/upload-release-asset@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  with:
+    #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #    asset_path: ${{ env.PROJECT_DIR_PATH }}/bin/${{ env.BUILD_CONFIG }}/${{ env.DOTNET_VERSION_TARGET }}-ios/ios-arm64/publish/APPGDA.ipa
+    #    asset_name: ${{ env.PACKAGE_NAME }}.ipa
+    #    asset_content_type: application/octet-stream        
+
+    

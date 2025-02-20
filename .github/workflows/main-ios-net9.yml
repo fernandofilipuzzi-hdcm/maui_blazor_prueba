@@ -1,0 +1,242 @@
+name: CD MAIN IO NET9 Build
+
+on:
+
+  workflow_dispatch:
+
+env:
+  BUILD_VERSION: '1.0.1'
+  DOTNET_VERSION_TARGET: net9.0
+  PROJECT_FILE: 'PruebaBlazor9.csproj'
+  PROJECT_FOLDER: 'PruebaBlazor9'
+  SOLUTION_FOLDER: './PruebaBlazor'
+  BUILD_CONFIG: 'Release'
+  PACKAGE_NAME: 'com.pruebablazor9'  
+  
+permissions:
+  contents: write
+  issues: read
+  packages: write
+
+jobs:
+
+  build-ios:
+    runs-on: macos-14
+    # runs-on: macos-latest
+    name: iOS Build and Publish
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOTNET_VERSION: '9.0.x'
+      XCODE_VERSION: '16.2'   
+      KEYCHAIN_PATH: "${{ github.workspace }}/build.keychain-db"
+      WORKSPACE: ${{ github.workspace }}
+      KEYCHAIN_PASS: '123'
+      CERT_DIST_PATH_P12: "${{ github.workspace }}/cert_dist.p12"
+      P12_PASS: ''
+
+    steps:
+    - name: "show workspace"
+      shell: sh
+      run: |
+        echo "show workspace"
+        ls $WORKSPACE
+        echo "end show workspace"
+
+    - name: Checkout the code  (hace el clone del repo)
+      uses: actions/checkout@v4     
+      with:
+        path: ./    
+
+    - name: ==Prepara el llavero==
+      shell: bash
+      run: |
+        echo "Prepara llavero"
+        #
+        echo "Path: $KEYCHAIN_PATH"
+        #
+        echo "Creando el llavero"
+        security create-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"        
+        security default-keychain -s "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+        #
+        echo  "Test path llavero: $(ls "$KEYCHAIN_PATH")"
+        #
+        echo "End prepa llavero ..."
+   
+    - name: Decode b64 el certificado de distribucion desde el secret
+      id: import_cert_dist
+      shell: bash
+      run: | 
+        echo "Decode b64 y revisando el contenido del certificado de distribucion"
+        #
+        echo -n "${{secrets.IOS_CERT_DIST_CONTAIN_BASE64}}" | base64 --decode -o $CERT_DIST_PATH_P12
+        #
+        echo "===contenido cert dist P12 base64 (sin decodear, desde secrets)==="
+        echo "${{secrets.IOS_CERT_DIST_CONTAIN_BASE64}}"
+        echo "===end contenido...===="
+        #
+        echo ===contenido cert dist P12 decodeado  ===
+        cat $CERT_DIST_PATH_P12
+        echo "===end contenido...======"
+        #
+        echo "end decode b64..."
+                
+    - name: Importando al llavero - Certificado de distribucion (p12)
+      shell: bash
+      run: |
+        echo "Importando al llavero - Certificado de distribucion (p12)"
+        #
+        security import $CERT_DIST_PATH_P12 -P "$P12_PASS" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        #
+        echo "Otorga al proceso de compilacion el acceso al llavero"
+        echo " nota: requiere que haya importado el fichero sino da error"
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+        #
+        echo "end importando ..."
+        
+    - name: Revisando los certificados en el llavero
+      shell: sh
+      run: |
+        echo "Revisando la informacion"
+        #
+        echo "1- Lista si el llavero esta disponible:"
+        security list-keychains -s "$KEYCHAIN_PATH"
+        #
+        echo "2- Recuperando el contenido desde el llavero: (-p es formato PEM)"
+        CCERT_DIST_CONTAIN=$(security find-certificate -c "NOTIONS" -a -Z -p "$KEYCHAIN_PATH")
+        #
+        echo "====contenido recuperado desde el llavero P12======="
+        echo "---(me aseguro que haya sido importado y est�-------"
+        echo $CERT_DIST_CONTAIN
+        echo "==========fin P12==================================="
+        #
+        echo "3- Extraccion del nombre del certificado"
+        CERT_DIST_NAME=$(echo $CERT_DIST_CONTAIN | grep -o '"alis"<blob>="[^"]*"' | sed -E 's/"alis"<blob>="(.*)"/\1/')
+        echo "Nombre del certificado: $CERT_DIST_NAME"
+        #
+        echo "4- Verifica el nombre del certificado en Los llaveros (debe imprimir: numero nombre certificado(clave))"
+        security find-identity -v -p codesigning 
+        #
+        echo "5- Verifica el nombre del certificado el llavero build: ${KEYCHAIN_PATH}"
+        security find-identity -v -p codesigning "${KEYCHAIN_PATH}"
+        #
+        echo "6- Revisa si la clave esta en el llavero"
+        security find-key -c "NOTIONS" "$KEYCHAIN_PATH"
+        #
+        echo "end Revisando..."
+
+    - name: ==Variables - Certificado Provisional profile .mobileprovision==
+      shell: sh
+      run: |
+        echo "Variables - Certificado Provisional profile "
+        #
+        echo "1- Package name: ${PACKAGE_NAME}"
+        #
+        CERT_PROV_FILE_NAME=$(echo ${PACKAGE_NAME} | tr -d '.')
+        echo "2- Nombre fichero provider: $CERT_PROV_FILE_NAME"
+        #
+        CERT_PROV_FILE_PATH="${WORKSPACE}/Certificados/${CERT_PROV_FILE_NAME}.mobileprovision"
+        echo "3- Path fichero provider subido: $CERT_PROV_FILE_PATH"
+        #
+        echo "5- Copiando provisional a default"
+        DEFAULT_CERT_PROV_DIR_PATH="~/Library/MobileDevice/Provisioning Profiles"
+        mkdir -p "$DEFAULT_CERT_PROV_DIR_PATH"
+        DEFAULT_CERT_PROV_FILE_PATH="${DEFAULT_CERT_PROV_DIR_PATH}/${PACKAGE_NAME}.mobileprovision"        
+        cp "$CERT_PROV_FILE_PATH" "$DEFAULT_CERT_PROV_FILE_PATH"
+        #
+        echo "6- Verificando nombre del default provisional: $DEFAULT_CERT_PROV_FILE_PATH si existe $(ls "$DEFAULT_CERT_PROV_FILE_PATH")"
+        #
+        echo "7- Revisando contenido del certificado desde la ubicacion default"
+        echo "=========contenido provider==(default)============"
+        cat "$DEFAULT_CERT_PROV_FILE_PATH"        
+        echo "=========end contenido provider==================="
+        #
+        echo "DEFAULT_CERT_PROV_FILE_PATH=$DEFAULT_CERT_PROV_FILE_PATH" >> $GITHUB_ENV
+        #
+        echo "end Variables..."
+
+    - name: Verificando Datos - Certificado Provisional profile
+      run: |
+        echo "Datos - Certificado Provisional profile"
+        #
+        PROV_PROFILE_UUID=$(security cms -D -i "$DEFAULT_CERT_PROV_FILE_PATH" | grep -A1 "UUID" | grep -o "[-a-zA-Z0-9]\{36\}")
+        echo "UUID del Certificado provisional profile: $PROV_PROFILE_UUID" 
+        #
+        echo "end Datos..."
+
+    - name: Setup XCode ${{ env.XCODE_VERSION }}
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ env.XCODE_VERSION }}
+
+    - name: Verify Xcode version
+      run: |
+        xcodebuild -version
+
+    - name: Listar versiones de Xcode disponibles
+      run: ls /Applications | grep Xcode
+
+    - name: Mostrar versiones detalladas de Xcode
+      run: |
+        for xcode in /Applications/Xcode*.app; do
+          echo "$xcode: $("${xcode}/Contents/Developer/usr/bin/xcodebuild" -version)"
+        done  
+
+    - name: Setup .NET ${{ env.DOTNET_VERSION }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install MAUI Workload
+      shell: bash
+      run: |
+        dotnet workload install maui --ignore-failed-sources
+
+    - name: Set dotnet enviroment defaults.
+      shell: bash
+      run: |   
+        export DOTNET_CLI_TELEMETRY_OPTOUT=1
+        dotnet dev-certs https
+        echo "DOTNET_CLI_TELEMETRY_OPTOUT=$DOTNET_CLI_TELEMETRY_OPTOUT" >> $GITHUB_ENV
+
+    - name: Verifica .NET version
+      shell: bash
+      run: |
+        dotnet --version                
+      
+    - name: preparando los path del proyecto
+      shell: bash
+      run: |
+        #
+        PROJECT_DIR_PATH="${SOLUTION_FOLDER}/${PROJECT_FOLDER}"
+        PROJECT_BUILD_FILE_PATH="${PROJECT_DIR_PATH}/${PROJECT_FILE}"
+        #
+        echo "Verifica path project folder: $(ls "$PROJECT_DIR_PATH")"
+        echo "Verifica path project file: $(ls "$PROJECT_BUILD_FILE_PATH")"
+        #
+        echo "PROJECT_DIR_PATH=$PROJECT_DIR_PATH" >> $GITHUB_ENV
+        echo "PROJECT_BUILD_FILE_PATH=$PROJECT_BUILD_FILE_PATH" >> $GITHUB_ENV
+        #
+        
+    - name: Limpiar proyecto
+      shell: bash
+      run: |
+        dotnet clean ${PROJECT_DIR_PATH}
+  
+    - name: Restaurar dependencias
+      shell: bash
+      run: |      
+        dotnet restore ${PROJECT_DIR_PATH}      
+           
+    - name: ==Construye para Release==
+      shell: bash
+      run: |
+        echo Construye para release
+        #
+        echo "Package name: ${PACKAGE_NAME}"
+        echo "$PROJECT_DIR_PATH => $(ls "$PROJECT_DIR_PATH")"
+        echo "$PROJECT_BUILD_FILE_PATH => $(ls "$PROJECT_BUILD_FILE_PATH")"
+        #
+        dotnet build -v:d "$PROJECT_BUILD_FILE_PATH" -c ${BUILD_CONFIG} -f ${DOTNET_VERSION_TARGET}-ios /p:CodesignKey="${CERT_DIST_NAME}" /p:CodesignProvision="${PACKAGE_NAME}" /p:SigningKeychain="${KEYCHAIN_PATH}"           
+        #
+        echo "end Construye los proyectos..."        
