@@ -1,9 +1,6 @@
 name: CD MAIN IO NET9 SIMPLE Build
 
 on:
-  push:
-    branches:
-      - main
 
   workflow_dispatch:
 
@@ -121,7 +118,7 @@ jobs:
             -c Release -f net8.0-ios \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
             /p:CodesignProvision="com.pruebablazor9" \
-            /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db" 
+            /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db"
 
       - name: ==Publish Release==
         run: |
