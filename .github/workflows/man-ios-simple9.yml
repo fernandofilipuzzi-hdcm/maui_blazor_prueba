@@ -1,4 +1,4 @@
-name: CD MAIN IO NET8 SIMPLE Build
+name: CD MAIN IO NET9 SIMPLE Build
 
 on:
   push:
@@ -70,10 +70,10 @@ jobs:
         run: |
           sudo security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision" > /dev/null 
 
-      - name: Setup XCode 15.4
+      - name: Setup XCode 16.1
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 15.4
+          xcode-version: 16.1
     
       - name: Verify Xcode version
         run: |
@@ -84,7 +84,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Elimina la versión net9 (default)
+      - name: Elimina la versión NET9 (default)
         run: |
           rm -rf /Users/runner/.dotnet/sdk/9.*
           echo "donet===> $(ls /Users/runner/.dotnet/sdk)"
