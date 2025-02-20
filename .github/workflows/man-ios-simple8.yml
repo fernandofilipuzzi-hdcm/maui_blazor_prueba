@@ -1,6 +1,10 @@
 name: CD MAIN IO NET8 SIMPLE Build
 
 on:
+  push:
+    branches:
+      - main
+  
   workflow_dispatch:
 
 env:
@@ -105,6 +109,8 @@ jobs:
 
       - name: ==Build Release==
         run: |
+          security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/compruebablazor9.mobileprovision"
+
           dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release -f net8.0-ios \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
