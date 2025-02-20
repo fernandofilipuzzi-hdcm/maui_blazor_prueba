@@ -121,5 +121,5 @@ jobs:
             -f:net8.0-ios /p:ArchiveOnBuild=true \
             /p:EnableAssemblyILStripping=false \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="com.pruebablazor9.mobileprovision"
+            /p:CodesignProvision="com.pruebablazor9"
                        
