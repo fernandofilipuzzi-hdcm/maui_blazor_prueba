@@ -113,3 +113,6 @@ xcodebuild -exportArchive \
    /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
    /p:CodesignProvision="$uuid"
 ```
+
+
+# /p:CodesignProvision="com.pruebacertificado" \

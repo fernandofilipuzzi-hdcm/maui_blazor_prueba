@@ -139,10 +139,11 @@ jobs:
             /p:EnableAssemblyILStripping=false \
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="com.pruebacertificado" \
             /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"  \
-            /p:AppIdentifier="com.pruebacertificado" \
+            /p:AppIdentifier="8BU3XBJR6T.com.pruebacertificado" \
             /p:BuildIpa=true -bl:build.binlog
+
+            
 
     
       - name: Inspeccionar logs de build
