@@ -107,8 +107,8 @@ jobs:
       - name: Instalacion MAUI workload
         run: |
           cd /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8
-          #dotnet workload restore --skip-manifest-update
-          dotnet workload install ios maui android --version 8.0.101
+          dotnet workload restore --skip-manifest-update
+          #dotnet workload install ios maui android --version 8.0.101
 
       - name: Restaurar dependencias
         shell: bash
