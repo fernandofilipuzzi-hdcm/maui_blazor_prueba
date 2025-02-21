@@ -65,7 +65,7 @@ jobs:
           #
           cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision \
             "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision"
-          chmod 644 ~/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision 
+          chmod 644 "/Users/runner/Library/MobileDevice/Provisioning Profiles/com.pruebablazor9.mobileprovision"
       
       - name: test
         run: |
