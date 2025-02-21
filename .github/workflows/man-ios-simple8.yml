@@ -119,7 +119,7 @@ jobs:
 
       - name: ==Build Release==
         run: |
-          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision" | grep -A 10 "<key>application-identifier</key>"
+          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision" | grep -A 10 "<key>application-identifier</key>"
 
           dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release -f net8.0-ios \
