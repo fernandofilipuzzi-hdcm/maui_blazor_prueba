@@ -59,14 +59,15 @@ jobs:
       - name: certificado provisional
         run: |
           mkdir -p "/Users/runner/Library/MobileDevice"
-          mkdir -p "/Users/runner/Library/MobileDevice/Provisioning\ Profiles"
+          mkdir -p "/Users/runner/Library/MobileDevice/Provisioning Profiles"
           #
           chmod -R u+rX /Users/runner/Library/MobileDevice
           #
           cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision \
-            "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision"
+            "/Users/runner/Library/MobileDevice/Provisioning Profiles/com.pruebablazor9.mobileprovision"
           chmod 644 "/Users/runner/Library/MobileDevice/Provisioning Profiles/com.pruebablazor9.mobileprovision"
-      
+          #~/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision 
+           
       - name: test
         run: |
           sudo security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision" > /dev/null 
