@@ -139,7 +139,7 @@ jobs:
             /p:EnableAssemblyILStripping=false \
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="compruebacertificado" \
+            /p:CodesignProvision="com.pruebacertificado" \
             /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"  \
             /p:AppIdentifier="com.pruebacertificado" \
             /p:BuildIpa=true -bl:build.binlog
