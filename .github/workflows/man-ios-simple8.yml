@@ -130,7 +130,7 @@ jobs:
         run: |
           dotnet publish "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release \
-            -f:net8.0-ios /p:ArchiveOnBuild=true \
+            -f:net8.0-ios /p:ArchiveOnBuild=true --verbosity diagnostic \
             /p:EnableAssemblyILStripping=false \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
             /p:CodesignProvision="com.pruebablazor9"
