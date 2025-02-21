@@ -136,8 +136,8 @@ jobs:
             /p:EnableAssemblyILStripping=false \
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="46e806a8-d39e-4479-ba7d-2916be06f4ae"
-            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision"
-            /p:AppIdentifier="com.pruebablazor9"
+            /p:CodesignProvision="46e806a8-d39e-4479-ba7d-2916be06f4ae" \
+            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision"  \
+            /p:AppIdentifier="com.pruebablazor9" \
             /p:BuildIpa=true
                        
