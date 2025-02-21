@@ -64,13 +64,13 @@ jobs:
           chmod -R u+rX /Users/runner/Library/MobileDevice
           #
           cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebacertificado.mobileprovision \
-            "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"
-          chmod 644 "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"
-          #~/Library/MobileDevice/Provisioning\ Profiles/compruebacertificado.mobileprovision 
+            "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebacertificado.mobileprovision"
+          chmod 644 "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebacertificado.mobileprovision"
+          #~/Library/MobileDevice/Provisioning\ Profiles/com.pruebacertificado.mobileprovision 
            
       - name: test
         run: |
-          sudo security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision" > /dev/null 
+          sudo security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebacertificado.mobileprovision" > /dev/null 
 
       - name: Setup XCode 15.4
         uses: maxim-lobanov/setup-xcode@v1
@@ -119,7 +119,7 @@ jobs:
 
       - name: ==Build Release==
         run: |
-          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision" | grep -A 10 "<key>application-identifier</key>"
+          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebacertificado.mobileprovision" | grep -A 10 "<key>application-identifier</key>"
 
           dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release -f net8.0-ios \
@@ -132,19 +132,17 @@ jobs:
 
       - name: ==Publish Release==
         run: |
-          dotnet publish "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
-            -c Release \
-            -f:net8.0-ios /p:ArchiveOnBuild=true --verbosity diagnostic \
-             -r ios-arm64 --self-contained --self-contained \
-            /p:EnableAssemblyILStripping=false \
-            /p:AppStorePackage=true \
-            /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"  \
-            /p:AppIdentifier="Prueba Certificados" \
-            /p:BuildIpa=true -bl:build.binlog
-
+          dotnet publish -f net8.0-ios -c Release -p:ApplicationId=com.pruebacertificado
+          # dotnet publish "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
+          #  -c Release \
+          #  -f:net8.0-ios /p:ArchiveOnBuild=true --verbosity diagnostic \
+          #   -r ios-arm64 --self-contained \
+          #  /p:EnableAssemblyILStripping=false \
+          #  /p:AppStorePackage=true \
+          #  /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
+          #  /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"  \
+          #  /p:AppIdentifier="8BU3XBJR6T.com.pruebacertificado" \
+          #  /p:BuildIpa=true -bl:build.binlog
             
-
-    
       - name: Inspeccionar logs de build
         run: msbuild /v:diag /nologo /bl:build.binlog
