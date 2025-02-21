@@ -127,6 +127,9 @@ jobs:
             /p:CodesignProvision="com.pruebablazor9" \
             /p:SigningKeychain="/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/build.keychain-db" 
 
+          brew install tree
+          tree /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/
+
       - name: ==Publish Release==
         run: |
           dotnet publish "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
@@ -140,6 +143,7 @@ jobs:
             /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"  \
             /p:AppIdentifier="com.pruebablazor9" \
             /p:BuildIpa=true -bl:build.binlog
+
     
       - name: Inspeccionar logs de build
         run: msbuild /v:diag /nologo /bl:build.binlog
