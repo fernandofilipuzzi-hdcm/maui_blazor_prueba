@@ -74,5 +74,5 @@
 		</intent>
 	</queries>
 
-	<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="35" />
+	<uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
 </manifest>
