@@ -140,7 +140,7 @@ jobs:
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
             /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"  \
-            /p:AppIdentifier="8BU3XBJR6T.com.pruebacertificado" \
+            /p:AppIdentifier="Prueba Certificados" \
             /p:BuildIpa=true -bl:build.binlog
 
             
