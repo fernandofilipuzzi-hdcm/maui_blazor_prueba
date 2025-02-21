@@ -59,13 +59,13 @@ jobs:
       - name: certificado provisional
         run: |
           mkdir -p "/Users/runner/Library/MobileDevice"
-          mkdir -p "/Users/runner/Library/MobileDevice/Profiles"
+          mkdir -p "/Users/runner/Library/MobileDevice/Profiles Profiles"
           #
           chmod -R u+rX /Users/runner/Library/MobileDevice
           #
           cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision \
-            "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"
-          chmod 644 "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"
+            "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"
+          chmod 644 "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"
           #~/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision 
            
       - name: test
@@ -119,7 +119,7 @@ jobs:
 
       - name: ==Build Release==
         run: |
-          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"
+          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision" | grep -A 10 "<key>application-identifier</key>"
 
           dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release -f net8.0-ios \
@@ -137,7 +137,9 @@ jobs:
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
             /p:CodesignProvision="com.pruebablazor9" \
-            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"  \
+            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"  \
             /p:AppIdentifier="com.pruebablazor9" \
-            /p:BuildIpa=true
-                       
+            /p:BuildIpa=true -bl:build.binlog
+    
+      - name: Inspeccionar logs de build
+        run: msbuild /v:diag /nologo /bl:build.binlog
