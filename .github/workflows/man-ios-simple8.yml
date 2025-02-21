@@ -59,18 +59,18 @@ jobs:
       - name: certificado provisional
         run: |
           mkdir -p "/Users/runner/Library/MobileDevice"
-          mkdir -p "/Users/runner/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "/Users/runner/Library/MobileDevice/Profiles"
           #
           chmod -R u+rX /Users/runner/Library/MobileDevice
           #
           cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision \
-            "/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision"
-          chmod 644 "/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision"
+            "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"
+          chmod 644 "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"
           #~/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision 
            
       - name: test
         run: |
-          sudo security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision" > /dev/null 
+          sudo security cms -D -i "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision" > /dev/null 
 
       - name: Setup XCode 15.4
         uses: maxim-lobanov/setup-xcode@v1
@@ -119,7 +119,7 @@ jobs:
 
       - name: ==Build Release==
         run: |
-          security cms -D -i "/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision"
+          security cms -D -i "/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"
 
           dotnet build -v:d "/Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/PruebaBlazor/PruebaBlazor8/PruebaBlazor8.csproj" \
             -c Release -f net8.0-ios \
@@ -136,8 +136,8 @@ jobs:
             /p:EnableAssemblyILStripping=false \
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="46e806a8-d39e-4479-ba7d-2916be06f4ae" \
-            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Provisioning Profiles/46e806a8-d39e-4479-ba7d-2916be06f4ae.mobileprovision"  \
+            /p:CodesignProvision="com.pruebablazor9" \
+            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles/com.pruebablazor9.mobileprovision"  \
             /p:AppIdentifier="com.pruebablazor9" \
             /p:BuildIpa=true
                        
