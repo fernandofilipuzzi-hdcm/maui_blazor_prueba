@@ -44,7 +44,6 @@
 
 	<ItemGroup>
 	  <AndroidResource Remove="Platforms\Android\Resources\values\styles.xml" />
-	  <AndroidResource Remove="Platforms\Android\Resources\xml\file_paths.xml" />
 	</ItemGroup>
 
 	<ItemGroup>
