@@ -14,7 +14,7 @@ env:
   PROJECT_FOLDER: 'PruebaBlazor8'
   SOLUTION_FOLDER: './PruebaBlazor'
   BUILD_CONFIG: 'Release'
-  PACKAGE_NAME: 'com.pruebablazor9'  
+  PACKAGE_NAME: 'com.pruebacertificado'  
 
 permissions:
   contents: write
@@ -63,14 +63,14 @@ jobs:
           #
           chmod -R u+rX /Users/runner/Library/MobileDevice
           #
-          cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebablazor9.mobileprovision \
-            "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"
-          chmod 644 "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"
-          #~/Library/MobileDevice/Provisioning\ Profiles/com.pruebablazor9.mobileprovision 
+          cp /Users/runner/work/maui_blazor_prueba/maui_blazor_prueba/Certificados/compruebacertificado.mobileprovision \
+            "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"
+          chmod 644 "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"
+          #~/Library/MobileDevice/Provisioning\ Profiles/compruebacertificado.mobileprovision 
            
       - name: test
         run: |
-          sudo security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision" > /dev/null 
+          sudo security cms -D -i "/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision" > /dev/null 
 
       - name: Setup XCode 15.4
         uses: maxim-lobanov/setup-xcode@v1
@@ -139,9 +139,9 @@ jobs:
             /p:EnableAssemblyILStripping=false \
             /p:AppStorePackage=true \
             /p:CodesignKey="Apple Distribution: NOTIONS GROUP S.A. (8BU3XBJR6T)" \
-            /p:CodesignProvision="com.pruebablazor9" \
-            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/com.pruebablazor9.mobileprovision"  \
-            /p:AppIdentifier="com.pruebablazor9" \
+            /p:CodesignProvision="compruebacertificado" \
+            /p:ProvisioningProfile="/Users/runner/Library/MobileDevice/Profiles Profiles/compruebacertificado.mobileprovision"  \
+            /p:AppIdentifier="com.pruebacertificado" \
             /p:BuildIpa=true -bl:build.binlog
 
     

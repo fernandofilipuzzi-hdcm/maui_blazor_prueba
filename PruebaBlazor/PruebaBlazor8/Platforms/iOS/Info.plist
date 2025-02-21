@@ -27,9 +27,9 @@
 		<key>MinimumOSVersion</key>
 		<string>14.2</string>
 		<key>CFBundleDisplayName</key>
-		<string>Prueba blazor net9</string>
+		<string>Prueba Certificados</string>
 		<key>CFBundleIdentifier</key>
-		<string>com.pruebablazor9</string>
+		<string>com.pruebacertificado</string>
 		<key>CFBundleVersion</key>
 		<string>1.0</string>
 		<key>CFBundleShortVersionString</key>
@@ -37,7 +37,7 @@
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>CFBundleName</key>
-		<string>APPNotions</string>
+		<string>compruebacertificado</string>
 		<key>XSAppIconAssets</key>
 		<string>Assets.xcassets/appicon.appiconset</string>
 		<key>UIStatusBarHidden</key>
